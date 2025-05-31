@@ -1,0 +1,146 @@
+---
+export interface Props {
+    category: string;
+}
+
+const { category } = Astro.props;
+
+// Lade alle Bilder rekursiv und eager
+const allImages = Object.entries(
+    import.meta.glob("/src/assets/gallery/**/*.jpg", {
+        eager: true,
+        as: "url",
+    }),
+).map(([path, url]) => ({
+    url,
+    category: path.split("/")[4], // z.B. "city", "nature"
+}));
+
+// Filtere nur die zur Kategorie passenden
+const images = allImages.filter((img) => img.category === category);
+---
+
+<style>
+    .masonry {
+        column-count: 2;
+        column-gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+        .masonry {
+            column-count: 3;
+        }
+    }
+
+    .masonry img {
+        width: 100%;
+        display: block;
+        margin-bottom: 1rem;
+        break-inside: avoid;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+
+    .lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+        z-index: 50;
+    }
+
+    .lightbox img {
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+
+    .lightbox-controls {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 1rem;
+        color: white;
+        font-size: 2rem;
+        user-select: none;
+    }
+</style>
+
+<div class="relative">
+    <div
+        id="gallery"
+        class="masonry transition-all duration-300"
+        style="max-height: 300vh; overflow: hidden;"
+    >
+        {
+            images.map((img, i) => (
+                <img
+                    src={img.url}
+                    alt={`Bild ${i}`}
+                    loading="lazy"
+                    onclick={`showLightbox(${i})`}
+                />
+            ))
+        }
+    </div>
+
+    <div class="text-center mt-6">
+        <button
+            class="px-4 py-2 bg-blue-600 text-white rounded"
+            onclick="expandGallery()">Mehr anzeigen</button
+        >
+    </div>
+</div>
+
+<div id="lightbox" class="lightbox">
+    <div class="lightbox-controls">
+        <span onclick="prevImage()">&#8592;</span>
+        <span onclick="closeLightbox()">✖</span>
+        <span onclick="nextImage()">&#8594;</span>
+    </div>
+    <img id="lightbox-img" src="" alt="Vorschau" />
+</div>
+
+<script type="text/javascript">
+    const images = Array.from(document.querySelectorAll("#gallery img"));
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightbox-img");
+    let current = 0;
+
+    function showLightbox(index) {
+        current = index;
+        lightbox.style.display = "flex";
+        lightboxImg.src = images[current].src;
+    }
+
+    function closeLightbox() {
+        lightbox.style.display = "none";
+    }
+
+    function nextImage() {
+        current = (current + 1) % images.length;
+        lightboxImg.src = images[current].src;
+    }
+
+    function prevImage() {
+        current = (current - 1 + images.length) % images.length;
+        lightboxImg.src = images[current].src;
+    }
+
+    function expandGallery() {
+        const gallery = document.getElementById("gallery");
+        const newHeight = parseInt(gallery.style.maxHeight) + 200;
+        gallery.style.maxHeight = `${newHeight}vh`;
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (lightbox.style.display === "flex") {
+            if (e.key === "Escape") closeLightbox();
+            if (e.key === "ArrowRight") nextImage();
+            if (e.key === "ArrowLeft") prevImage();
+        }
+    });
+</script>

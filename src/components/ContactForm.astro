@@ -1,0 +1,60 @@
+---
+
+---
+
+<form id="contact-form" class="space-y-4">
+    <input
+        type="text"
+        name="website"
+        class="hidden"
+        autocomplete="off"
+        tabindex="-1"
+    />
+
+    <label>
+        Name
+        <input type="text" name="name" required class="block w-full" />
+    </label>
+
+    <label>
+        E-Mail
+        <input type="email" name="email" required class="block w-full" />
+    </label>
+
+    <label>
+        Nachricht
+        <textarea name="message" rows="5" required class="block w-full"
+        ></textarea>
+    </label>
+
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
+        Senden
+    </button>
+</form>
+
+<script type="module">
+    const form = document.querySelector("#contact-form");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch("/api/contact", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (response.ok) {
+                window.location.href = "/danke";
+            } else {
+                console.error("Serverantwort nicht ok:", await response.text());
+                alert("Fehler beim Senden. Bitte versuche es erneut.");
+            }
+        } catch (error) {
+            console.error("Netzwerkfehler:", error);
+            alert("Fehler beim Senden. Bitte versuche es erneut.");
+        }
+    });
+</script>
